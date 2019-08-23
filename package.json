@@ -1,0 +1,17 @@
+{
+  "name": "ih-ngiw",
+  "version": "1.0.0",
+  "description": "Hub88 Next Generation Integration Wrapper",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "hub88"
+  ],
+  "author": "Igor Adrov",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
