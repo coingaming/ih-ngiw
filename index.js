@@ -1,10 +1,31 @@
 const express = require("express");
 
+const STATUS_CODES = {
+  RS_ERROR_UNKNOWN: "RS_ERROR_UNKNOWN"
+};
+
+/**
+ * @typedef {Object} BalanceResponse
+ * @property {string} user - Unique User ID in the Operator’s system. In case of DEMO gameplay, this parameter may be omitted.
+ */
+
+/**
+ * Callback for balance
+ *
+ * @callback balanceCallback
+ * @param {BalanceRequest} request
+ * @return {BalanceResponse}
+ */
+
 class Ngiw {
   constructor(params = { port: 3000 }) {
     this.params = params;
   }
 
+  /**
+   *
+   * @param {balanceCallback} cb
+   */
   balance(cb) {
     this._balance = cb;
 
@@ -18,10 +39,27 @@ class Ngiw {
 
     const app = express();
 
-    app.get("/", (req, res) => {
-      const result = this._balance(req);
+    app.use(express.json());
 
-      res.send("Hello World!");
+    app.post("/user/balance", (req, res) => {
+      if (!req.body || !req.body.request_uuid) {
+        res.send({
+          status: "RS_ERROR_WRONG_SYNTAX"
+        });
+        return;
+      }
+
+      const result = this._balance(req.body);
+
+      if (!result.user) {
+        throw Error("Balance should return user");
+      }
+
+      res.send({
+        status: result.status || "RS_OK",
+        user: result.user,
+        request_uuid: req.body.request_uuid
+      });
     });
 
     app.listen(this.params.port, () =>
@@ -31,5 +69,7 @@ class Ngiw {
     return this;
   }
 }
+
+Ngiw.STATUS_CODES = STATUS_CODES;
 
 module.exports = Ngiw;
