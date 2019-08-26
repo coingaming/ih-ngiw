@@ -36,9 +36,9 @@ const STATUS_CODES = {
  * @return {BalanceResponse}
  */
 
-const createBalanceRoute = cb => (req, res) => {
+const createRoute = requiredFields => cb => (req, res) => {
   const isValidRequest =
-    req.body && req.body.request_uuid && req.body.token && req.body.game_id;
+    req.body && requiredFields.every(field => req.body[field] !== undefined);
 
   if (!isValidRequest) {
     res.send({
@@ -54,7 +54,7 @@ const createBalanceRoute = cb => (req, res) => {
     (result.user && result.currency && result.balance !== undefined);
 
   if (!isValidResult) {
-    throw Error("Balance method should return user");
+    throw Error("Method should return `user`, `currency`, `balance` fields");
   }
 
   const { user, currency, balance } = result;
@@ -65,6 +65,44 @@ const createBalanceRoute = cb => (req, res) => {
     request_uuid: req.body.request_uuid
   });
 };
+
+const createBalanceRoute = createRoute(["request_uuid", "token", "game_id"]);
+
+const createWinRoute = createRoute([
+  "transaction_uuid",
+  "token",
+  "supplier_user",
+  "round",
+  "request_uuid",
+  "reference_transaction_uuid",
+  "is_free",
+  "game_id",
+  "currency",
+  "bet",
+  "amount"
+]);
+
+const createRollbackRoute = createRoute([
+  "transaction_uuid",
+  "token",
+  "round",
+  "request_uuid",
+  "reference_transaction_uuid",
+  "game_id"
+]);
+
+const createBetRoute = createRoute([
+  "transaction_uuid",
+  "token",
+  "supplier_user",
+  "round",
+  "request_uuid",
+  "is_free",
+  "game_id",
+  "currency",
+  "bet",
+  "amount"
+]);
 
 const createValidateSignature = hmCrypto => (req, res) => {
   const signature = hmCrypto.sign(JSON.stringify(req.body));
@@ -80,15 +118,16 @@ const createValidateSignature = hmCrypto => (req, res) => {
   return true;
 };
 
+const defaultParams = {
+  port: 3000,
+  publicKey: "priv/demo_pub.pem",
+  privateKey: "priv/demo_priv.pem"
+};
+
 class Ngiw {
-  constructor(
-    params = {
-      port: 3000,
-      publicKey: "priv/demo_pub.pem",
-      privateKey: "priv/demo_priv.pem"
-    }
-  ) {
+  constructor(params = defaultParams) {
     this.params = params;
+
     const publicKeyPem = readPem(params.publicKey);
     const privateKeyPem = readPem(params.privateKey);
 
@@ -100,21 +139,64 @@ class Ngiw {
    * @param {balanceCallback} cb
    */
   balance(cb) {
-    this._balance = cb;
+    this._balanceCallback = cb;
+
+    return this;
+  }
+
+  win(cb) {
+    this._winCallback = cb;
+
+    return this;
+  }
+
+  rollback(cb) {
+    this._rollbackCallback = cb;
+
+    return this;
+  }
+
+  bet(cb) {
+    this._betCallback = cb;
 
     return this;
   }
 
   start() {
-    if (!this._balance) {
+    if (!this._balanceCallback) {
       throw Error("Balance callback should be implemented");
+    }
+
+    if (!this._winCallback) {
+      throw Error("Win callback should be implemented");
+    }
+
+    if (!this._rollbackCallback) {
+      throw Error("Rollback callback should be implemented");
+    }
+
+    if (!this._betCallback) {
+      throw Error("Bet callback should be implemented");
     }
 
     const app = express();
 
     app.use(express.json());
 
-    const balanceRoute = createBalanceRoute(this._balance, this.hmCrypto);
+    const balanceRoute = createBalanceRoute(
+      this._balanceCallback,
+      this.hmCrypto
+    );
+
+    const winRoute = createWinRoute(this._winCallback, this.hmCrypto);
+
+    const rollbackRoute = createRollbackRoute(
+      this._rollbackCallback,
+      this.hmCrypto
+    );
+
+    const betRoute = createRollbackRoute(this._betCallback, this.hmCrypto);
+
     const validateSignature = createValidateSignature(this.hmCrypto);
 
     app.post("/user/balance", (req, res) => {
@@ -122,6 +204,27 @@ class Ngiw {
         return;
       }
       balanceRoute(req, res);
+    });
+
+    app.post("/transaction/win", (req, res) => {
+      if (!validateSignature(req, res)) {
+        return;
+      }
+      winRoute(req, res);
+    });
+
+    app.post("/transaction/rollback", (req, res) => {
+      if (!validateSignature(req, res)) {
+        return;
+      }
+      rollbackRoute(req, res);
+    });
+
+    app.post("/transaction/bet", (req, res) => {
+      if (!validateSignature(req, res)) {
+        return;
+      }
+      betRoute(req, res);
     });
 
     app.listen(this.params.port, () =>
@@ -134,6 +237,9 @@ class Ngiw {
 
 Ngiw.STATUS_CODES = STATUS_CODES;
 Ngiw._createBalanceRoute = createBalanceRoute;
+Ngiw._createWinRoute = createWinRoute;
+Ngiw._createRollbackRoute = createRollbackRoute;
+Ngiw._createBetRoute = createBetRoute;
 Ngiw._createValidateSignature = createValidateSignature;
 
 module.exports = Ngiw;
