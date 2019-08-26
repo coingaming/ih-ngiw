@@ -1,4 +1,13 @@
 const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const HmCrypto = require("hm-crypto-nodejs");
+
+const readPem = filename => {
+  return fs.readFileSync(path.resolve(__dirname, filename)).toString("ascii");
+};
+
+const digestType = "RSA-SHA256";
 
 const STATUS_CODES = {
   RS_ERROR_UNKNOWN: "RS_ERROR_UNKNOWN",
@@ -48,16 +57,42 @@ const createBalanceRoute = cb => (req, res) => {
     throw Error("Balance method should return user");
   }
 
+  const { user, currency, balance } = result;
+
   res.send({
     status: result.status || "RS_OK",
-    user: result.user,
+    ...{ user, currency, balance },
     request_uuid: req.body.request_uuid
   });
 };
 
+const createValidateSignature = hmCrypto => (req, res) => {
+  const signature = hmCrypto.sign(JSON.stringify(req.body));
+
+  if (signature !== req.get("X-Hub88-Signature")) {
+    res.send({
+      status: "RS_ERROR_INVALID_SIGNATURE",
+      request_uuid: req.body.request_uuid
+    });
+    return false;
+  }
+
+  return true;
+};
+
 class Ngiw {
-  constructor(params = { port: 3000 }) {
+  constructor(
+    params = {
+      port: 3000,
+      publicKey: "priv/demo_pub.pem",
+      privateKey: "priv/demo_priv.pem"
+    }
+  ) {
     this.params = params;
+    const publicKeyPem = readPem(params.publicKey);
+    const privateKeyPem = readPem(params.privateKey);
+
+    this.hmCrypto = HmCrypto(digestType, privateKeyPem, publicKeyPem);
   }
 
   /**
@@ -79,12 +114,18 @@ class Ngiw {
 
     app.use(express.json());
 
-    const balanceRoute = createBalanceRoute(this._balance);
+    const balanceRoute = createBalanceRoute(this._balance, this.hmCrypto);
+    const validateSignature = createValidateSignature(this.hmCrypto);
 
-    app.post("/user/balance", balanceRoute);
+    app.post("/user/balance", (req, res) => {
+      if (!validateSignature(req, res)) {
+        return;
+      }
+      balanceRoute(req, res);
+    });
 
     app.listen(this.params.port, () =>
-      console.log(`Example app listening on port ${this.params.port}!`)
+      console.log(`NGIW listening on port ${this.params.port}!`)
     );
 
     return this;
@@ -93,5 +134,6 @@ class Ngiw {
 
 Ngiw.STATUS_CODES = STATUS_CODES;
 Ngiw._createBalanceRoute = createBalanceRoute;
+Ngiw._createValidateSignature = createValidateSignature;
 
 module.exports = Ngiw;

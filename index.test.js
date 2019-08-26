@@ -72,7 +72,34 @@ describe("balance route", function() {
     expect(res.send).toBeCalledWith({
       request_uuid: "foo",
       status: "RS_OK",
-      user: "bar"
+      user: "bar",
+      balance: 123,
+      currency: "EUR"
+    });
+  });
+});
+
+describe("validate signature", function() {
+  it("should return status RS_ERROR_INVALID_SIGNATURE if signature not equal expected", function() {
+    const req = {
+      get: () => "wrong_sign",
+      body: {
+        request_uuid: "foo"
+      }
+    };
+    const res = {
+      send: jest.fn()
+    };
+    const crypto = {
+      sign: () => "sign"
+    };
+    const validateSignature = Ngiw._createValidateSignature(crypto);
+
+    validateSignature(req, res);
+
+    expect(res.send).toBeCalledWith({
+      request_uuid: "foo",
+      status: "RS_ERROR_INVALID_SIGNATURE"
     });
   });
 });
