@@ -17,6 +17,27 @@ const STATUS_CODES = {
  * @return {BalanceResponse}
  */
 
+const createBalanceRoute = cb => (req, res) => {
+  if (!req.body || !req.body.request_uuid) {
+    res.send({
+      status: "RS_ERROR_WRONG_SYNTAX"
+    });
+    return;
+  }
+
+  const result = cb(req.body);
+
+  if (!result.user) {
+    throw Error("Balance method should return user");
+  }
+
+  res.send({
+    status: result.status || "RS_OK",
+    user: result.user,
+    request_uuid: req.body.request_uuid
+  });
+};
+
 class Ngiw {
   constructor(params = { port: 3000 }) {
     this.params = params;
@@ -41,26 +62,9 @@ class Ngiw {
 
     app.use(express.json());
 
-    app.post("/user/balance", (req, res) => {
-      if (!req.body || !req.body.request_uuid) {
-        res.send({
-          status: "RS_ERROR_WRONG_SYNTAX"
-        });
-        return;
-      }
+    const balanceRoute = createBalanceRoute(this._balance);
 
-      const result = this._balance(req.body);
-
-      if (!result.user) {
-        throw Error("Balance should return user");
-      }
-
-      res.send({
-        status: result.status || "RS_OK",
-        user: result.user,
-        request_uuid: req.body.request_uuid
-      });
-    });
+    app.post("/user/balance", balanceRoute);
 
     app.listen(this.params.port, () =>
       console.log(`Example app listening on port ${this.params.port}!`)
@@ -71,5 +75,6 @@ class Ngiw {
 }
 
 Ngiw.STATUS_CODES = STATUS_CODES;
+Ngiw._createBalanceRoute = createBalanceRoute;
 
 module.exports = Ngiw;

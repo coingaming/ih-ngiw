@@ -4,7 +4,7 @@
   "description": "Hub88 Next Generation Integration Wrapper",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [
     "hub88"
@@ -13,5 +13,8 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "jest": "^24.9.0"
   }
 }
