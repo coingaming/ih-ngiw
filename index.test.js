@@ -1,5 +1,7 @@
 const Ngiw = require("./index");
 
+const { RS_ERROR_UNKNOWN } = Ngiw.STATUS_CODES;
+
 describe("server", function() {
   it("should throw exception if one of callbacks not implemented", function() {
     const w = new Ngiw();
@@ -24,9 +26,9 @@ describe("balance route", function() {
     });
   });
 
-  it("should throw error if result does not contain requried fields", function() {
+  it("should throw error if result does not contain required fields", function() {
     const req = {
-      body: { request_uuid: "foo" }
+      body: { request_uuid: "foo", token: "tok", game_id: 123 }
     };
     const res = {
       send: jest.fn()
@@ -35,5 +37,42 @@ describe("balance route", function() {
     const balanceRoute = Ngiw._createBalanceRoute(cb);
 
     expect(() => balanceRoute(req, res)).toThrow();
+  });
+
+  it("should not throw error if status passed", function() {
+    const req = {
+      body: { request_uuid: "foo", token: "tok", game_id: 123 }
+    };
+    const res = {
+      send: jest.fn()
+    };
+    const cb = () => ({ status: RS_ERROR_UNKNOWN });
+    const balanceRoute = Ngiw._createBalanceRoute(cb);
+
+    balanceRoute(req, res);
+
+    expect(res.send).toBeCalledWith({
+      request_uuid: "foo",
+      status: RS_ERROR_UNKNOWN
+    });
+  });
+
+  it("should return RS_OK result if everything passed", function() {
+    const req = {
+      body: { request_uuid: "foo", token: "tok", game_id: 123 }
+    };
+    const res = {
+      send: jest.fn()
+    };
+    const cb = () => ({ user: "bar", currency: "EUR", balance: 123 });
+    const balanceRoute = Ngiw._createBalanceRoute(cb);
+
+    balanceRoute(req, res);
+
+    expect(res.send).toBeCalledWith({
+      request_uuid: "foo",
+      status: "RS_OK",
+      user: "bar"
+    });
   });
 });

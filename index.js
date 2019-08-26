@@ -1,7 +1,17 @@
 const express = require("express");
 
 const STATUS_CODES = {
-  RS_ERROR_UNKNOWN: "RS_ERROR_UNKNOWN"
+  RS_ERROR_UNKNOWN: "RS_ERROR_UNKNOWN",
+  RS_ERROR_INVALID_PARTNER: "RS_ERROR_INVALID_PARTNER",
+  RS_ERROR_INVALID_TOKEN: "RS_ERROR_INVALID_TOKEN",
+  RS_ERROR_INVALID_GAME: "RS_ERROR_INVALID_GAME",
+  RS_ERROR_WRONG_CURRENCY: "RS_ERROR_WRONG_CURRENCY",
+  RS_ERROR_NOT_ENOUGH_MONEY: "RS_ERROR_NOT_ENOUGH_MONEY",
+  RS_ERROR_USER_DISABLED: "RS_ERROR_USER_DISABLED",
+  RS_ERROR_TOKEN_EXPIRED: "RS_ERROR_TOKEN_EXPIRED",
+  RS_ERROR_DUPLICATE_TRANSACTION: "RS_ERROR_DUPLICATE_TRANSACTION",
+  RS_ERROR_TRANSACTION_DOES_NOT_EXIST: "RS_ERROR_TRANSACTION_DOES_NOT_EXIST",
+  RS_ERROR_TRANSACTION_ROLLED_BACK: "RS_ERROR_TRANSACTION_ROLLED_BACK"
 };
 
 /**
@@ -18,7 +28,10 @@ const STATUS_CODES = {
  */
 
 const createBalanceRoute = cb => (req, res) => {
-  if (!req.body || !req.body.request_uuid) {
+  const isValidRequest =
+    req.body && req.body.request_uuid && req.body.token && req.body.game_id;
+
+  if (!isValidRequest) {
     res.send({
       status: "RS_ERROR_WRONG_SYNTAX"
     });
@@ -27,7 +40,11 @@ const createBalanceRoute = cb => (req, res) => {
 
   const result = cb(req.body);
 
-  if (!result.user) {
+  const isValidResult =
+    result.status ||
+    (result.user && result.currency && result.balance !== undefined);
+
+  if (!isValidResult) {
     throw Error("Balance method should return user");
   }
 
