@@ -23,24 +23,24 @@ const w = new Ngiw({
   privateKey: "priv/demo_priv.pem"
 });
 
-w.balance(res => {
-  const user = db.findUserBySession(res.token);
+w.balance(req => {
+  const user = db.findUserBySession(req.token);
   return { user: user.name, balance: user.balance, currency: "EUR" };
 })
-  .win(res => {
-    const game = db.winGame(res.transaction_uuid);
+  .win(req => {
+    const game = db.winGame(req.transaction_uuid);
     return { user: game.user, balance: game.balance, currency: "EUR" };
   })
-  .rollback(res => {
-    const transaction = db.rollbackTransaction(res.transaction_uuid);
+  .rollback(req => {
+    const transaction = db.rollbackTransaction(req.transaction_uuid);
     return {
       user: transaction.user,
       balance: transaction.balance,
       currency: "EUR"
     };
   })
-  .bet(res => {
-    const transaction = db.betTransaction(res.transaction_uuid);
+  .bet(req => {
+    const transaction = db.betTransaction(req.transaction_uuid);
     return {
       user: transaction.user,
       balance: transaction.balance,
