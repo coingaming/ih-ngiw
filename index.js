@@ -133,7 +133,12 @@ class Ngiw {
     const publicKeyPem = readPem(params.publicKey);
     const privateKeyPem = readPem(params.privateKey);
 
-    this.hmCrypto = HmCrypto(digestType, privateKeyPem, publicKeyPem);
+    const hmCrypto = HmCrypto(digestType, privateKeyPem, publicKeyPem);
+
+    this.app = express();
+
+    this.app.use(express.json());
+    this.app.use(validateSignature(hmCrypto));
   }
 
   /**
@@ -181,42 +186,23 @@ class Ngiw {
       throw Error("Bet callback should be implemented");
     }
 
-    const app = express();
+    const balanceRoute = createBalanceRoute(this._balanceCallback);
 
-    app.use(express.json());
-    app.use(validateSignature(this.hmCrypto));
+    const winRoute = createWinRoute(this._winCallback);
 
-    const balanceRoute = createBalanceRoute(
-      this._balanceCallback,
-      this.hmCrypto
-    );
+    const rollbackRoute = createRollbackRoute(this._rollbackCallback);
 
-    const winRoute = createWinRoute(this._winCallback, this.hmCrypto);
+    const betRoute = createRollbackRoute(this._betCallback);
 
-    const rollbackRoute = createRollbackRoute(
-      this._rollbackCallback,
-      this.hmCrypto
-    );
+    this.app.post("/user/balance", balanceRoute);
 
-    const betRoute = createRollbackRoute(this._betCallback, this.hmCrypto);
+    this.app.post("/transaction/win", winRoute);
 
-    app.post("/user/balance", (req, res) => {
-      balanceRoute(req, res);
-    });
+    this.app.post("/transaction/rollback", rollbackRoute);
 
-    app.post("/transaction/win", (req, res) => {
-      winRoute(req, res);
-    });
+    this.app.post("/transaction/bet", betRoute);
 
-    app.post("/transaction/rollback", (req, res) => {
-      rollbackRoute(req, res);
-    });
-
-    app.post("/transaction/bet", (req, res) => {
-      betRoute(req, res);
-    });
-
-    app.listen(this.params.port, () =>
+    this.app.listen(this.params.port, () =>
       console.log(`NGIW listening on port ${this.params.port}!`)
     );
 
