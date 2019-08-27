@@ -9,7 +9,14 @@
   "keywords": [
     "hub88"
   ],
-  "author": "Igor Adrov",
+  "author": {
+    "name": "Igor Adrov",
+    "email": "nucleartux@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coingaming/ih-ngiw"
+  },
   "license": "ISC",
   "dependencies": {
     "express": "^4.17.1",
