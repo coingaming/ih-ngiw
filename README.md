@@ -67,7 +67,7 @@ w.start();
 
 ```
 
-Every callback called with different params, you can found description here in `body` section: https://app.swaggerhub.com/apis/hub88/hub88/2.0#/Wallet%20API. For example `balance` callback called with `token` and `game_id` (you should not care about `request_uuid`, it handled internally).
+Every callback called with different params, you can find description here in `body` section: https://app.swaggerhub.com/apis/hub88/hub88/2.0#/Wallet%20API. For example `balance` callback called with `token` and `game_id` (you should not care about `request_uuid`, it handled internally).
 
 In every callback you should return `user`, `balance`, and `currency` fields. Or if something goes wrong your can return `status` field, you can grab all statuses from `Ngiw.STATUS_CODES`. For example:
 
