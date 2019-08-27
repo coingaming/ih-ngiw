@@ -340,9 +340,9 @@ describe("validate signature", function() {
       send: jest.fn()
     };
     const crypto = {
-      sign: () => "sign"
+      isValid: () => false
     };
-    const validateSignature = Ngiw._createValidateSignature(crypto);
+    const validateSignature = Ngiw._validateSignature(crypto);
 
     validateSignature(req, res);
 

@@ -104,18 +104,20 @@ const createBetRoute = createRoute([
   "amount"
 ]);
 
-const createValidateSignature = hmCrypto => (req, res) => {
-  const signature = hmCrypto.sign(JSON.stringify(req.body));
+const validateSignature = hmCrypto => (req, res, next) => {
+  const isValid = hmCrypto.isValid(
+    JSON.stringify(req.body),
+    req.get("X-Hub88-Signature")
+  );
 
-  if (signature !== req.get("X-Hub88-Signature")) {
-    res.send({
-      status: "RS_ERROR_INVALID_SIGNATURE",
-      request_uuid: req.body.request_uuid
-    });
-    return false;
+  if (isValid) {
+    return next();
   }
 
-  return true;
+  res.send({
+    status: "RS_ERROR_INVALID_SIGNATURE",
+    request_uuid: req.body.request_uuid
+  });
 };
 
 const defaultParams = {
@@ -182,6 +184,7 @@ class Ngiw {
     const app = express();
 
     app.use(express.json());
+    app.use(validateSignature(this.hmCrypto));
 
     const balanceRoute = createBalanceRoute(
       this._balanceCallback,
@@ -197,33 +200,19 @@ class Ngiw {
 
     const betRoute = createRollbackRoute(this._betCallback, this.hmCrypto);
 
-    const validateSignature = createValidateSignature(this.hmCrypto);
-
     app.post("/user/balance", (req, res) => {
-      if (!validateSignature(req, res)) {
-        return;
-      }
       balanceRoute(req, res);
     });
 
     app.post("/transaction/win", (req, res) => {
-      if (!validateSignature(req, res)) {
-        return;
-      }
       winRoute(req, res);
     });
 
     app.post("/transaction/rollback", (req, res) => {
-      if (!validateSignature(req, res)) {
-        return;
-      }
       rollbackRoute(req, res);
     });
 
     app.post("/transaction/bet", (req, res) => {
-      if (!validateSignature(req, res)) {
-        return;
-      }
       betRoute(req, res);
     });
 
@@ -240,6 +229,6 @@ Ngiw._createBalanceRoute = createBalanceRoute;
 Ngiw._createWinRoute = createWinRoute;
 Ngiw._createRollbackRoute = createRollbackRoute;
 Ngiw._createBetRoute = createBetRoute;
-Ngiw._createValidateSignature = createValidateSignature;
+Ngiw._validateSignature = validateSignature;
 
 module.exports = Ngiw;
