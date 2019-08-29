@@ -1,4 +1,5 @@
 const Ngiw = require("../index");
+const path = require("path");
 
 const { RS_ERROR_USER_DISABLED } = Ngiw.STATUS_CODES;
 
@@ -19,8 +20,8 @@ const db = {
 
 const w = new Ngiw({
   port: 3000,
-  publicKey: "priv/demo_pub.pem",
-  privateKey: "priv/demo_priv.pem"
+  publicKey: path.resolve(__dirname, "priv/demo_pub.pem"),
+  privateKey: path.resolve(__dirname, "priv/demo_priv.pem")
 });
 
 w.balance(req => {

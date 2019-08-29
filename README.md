@@ -21,10 +21,12 @@ You should already have public and private key for checking requests from Hub88,
 Constructor accepts `port` and `publicKey`, `privateKey` params:
 
 ```
+const path = require("path");
+
 const w = new Ngiw({
   port: 3000,
-  publicKey: "priv/demo_pub.pem",
-  privateKey: "priv/demo_priv.pem"
+  publicKey: path.resolve(__dirname, "priv/demo_pub.pem"),
+  privateKey: path.resolve(__dirname, "priv/demo_priv.pem")
 });
 ```
 

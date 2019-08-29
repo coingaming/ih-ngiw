@@ -1,10 +1,9 @@
 const express = require("express");
 const fs = require("fs");
-const path = require("path");
 const HmCrypto = require("hm-crypto-nodejs");
 
 const readPem = filename => {
-  return fs.readFileSync(path.resolve(__dirname, filename)).toString("ascii");
+  return fs.readFileSync(filename).toString("ascii");
 };
 
 const digestType = "RSA-SHA256";

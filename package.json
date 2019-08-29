@@ -1,6 +1,6 @@
 {
   "name": "@heathmont/ih-ngiw",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Hub88 Next Generation Integration Wrapper",
   "main": "index.js",
   "scripts": {
