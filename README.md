@@ -7,13 +7,13 @@ Hub88 Next Generation Integration Wrapper
 First of all you need to install package:
 
 ```
-npm install --save ih-ngiw
+npm install --save @heathmont/ih-ngiw
 ```
 
 Then you can include your it in your own script:
 
 ```
-const Ngiw = require("ih-ngiw");
+const Ngiw = require("@heathmont/ih-ngiw");
 ```
 
 You should already have public and private key for checking requests from Hub88, in case you don't read about it here: https://github.com/coingaming/Hub88-Examples.
