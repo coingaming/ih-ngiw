@@ -265,7 +265,7 @@ class Ngiw {
 
     const rollbackRoute = createRollbackRoute(this._rollbackCallback);
 
-    const betRoute = createRollbackRoute(this._betCallback);
+    const betRoute = createBetRoute(this._betCallback);
 
     this.app.post("/user/balance", balanceRoute);
 
